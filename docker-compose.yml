@@ -1,13 +1,14 @@
 services:
   # The Upstash-compatible Redis HTTP adapter
   serverless-redis-http:
-    build: .
+    image: drewgarratt382/serverless-elysia-redis-http:latest
+    # build: .  # Uncomment to build from source instead
     ports:
       - "8080:8080"
     environment:
       - REDIS_URL=redis://redis:6379
       - PORT=8080
-      - TOKEN=${UPSTASH_TOKEN:-}
+      - UPSTASH_TOKEN=${UPSTASH_TOKEN:-}
       - VERBOSE=${VERBOSE:-false}
     depends_on:
       redis:
@@ -36,4 +37,3 @@ services:
 
 volumes:
   redis_data:
-

@@ -1,37 +1,48 @@
-# Use Bun as the base image
-FROM oven/bun:1-alpine AS base
+# Build stage - compile to binary
+FROM oven/bun:1 AS build
+
 WORKDIR /app
 
-# Install dependencies
-FROM base AS deps
-COPY package.json bun.lockb* ./
-RUN bun install --frozen-lockfile --production
+# Cache packages installation
+COPY package.json bun.lock* ./
+RUN bun install --frozen-lockfile
 
-# Build stage (if needed for future compilation)
-FROM base AS builder
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+# Copy source files
+COPY ./src ./src
+COPY tsconfig.json ./
 
-# Production image
-FROM base AS runner
+ENV NODE_ENV=production
+
+# Compile to standalone binary (2-3x less memory usage)
+RUN bun build \
+	--compile \
+	--minify-whitespace \
+	--minify-syntax \
+	--target bun-linux-x64 \
+	--outfile server \
+	src/index.ts
+
+# Production image - minimal Distroless base
+FROM gcr.io/distroless/base-debian12
+
+# OCI labels for Docker Hub
+LABEL org.opencontainers.image.title="Serverless Elysia Redis HTTP"
+LABEL org.opencontainers.image.description="Upstash-compatible REST API adapter for Redis"
+LABEL org.opencontainers.image.source="https://github.com/drew-foxall/Serverless-Elysia-Redis-HTTP"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.vendor="drewgarratt382"
+
+WORKDIR /app
+
+# Copy compiled binary from build stage
+COPY --from=build /app/server server
+
 ENV NODE_ENV=production
 ENV PORT=8080
 
-# Create non-root user
-RUN addgroup --system --gid 1001 elysia
-RUN adduser --system --uid 1001 elysia
-
-# Copy application files
-COPY --from=builder /app/src ./src
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
-
-# Set ownership
-RUN chown -R elysia:elysia /app
-
-USER elysia
+# Run as non-root (distroless default)
+USER nonroot
 
 EXPOSE 8080
 
-CMD ["bun", "run", "src/index.ts"]
-
+CMD ["./server"]

@@ -305,17 +305,24 @@ All request bodies are validated against strict schemas to prevent:
 
 ## Docker
 
-### Build and Run
+### Pull and Run
 
 ```bash
-# Build image
-docker build -t serverless-elysia-redis-http .
+# Pull from Docker Hub
+docker pull drewgarratt382/serverless-elysia-redis-http
 
 # Run with external Redis
-docker run -p 8080:8080 \
+docker run -d -p 8080:8080 \
   -e REDIS_URL=redis://host.docker.internal:6379 \
   -e UPSTASH_TOKEN=your-token \
-  serverless-elysia-redis-http
+  drewgarratt382/serverless-elysia-redis-http
+```
+
+### Build Locally
+
+```bash
+# Build from source
+docker build -t serverless-elysia-redis-http .
 ```
 
 ### Docker Compose
