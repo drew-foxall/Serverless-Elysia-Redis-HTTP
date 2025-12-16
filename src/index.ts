@@ -118,11 +118,6 @@ if (config.commandFilterMode === "none") {
 	console.warn("⚠️  WARNING: Command filtering is disabled! This is dangerous.");
 }
 
-// Warn if rate limiting is disabled
-if (!config.rateLimit.enabled) {
-	console.warn("⚠️  WARNING: Rate limiting is disabled! Set RATE_LIMIT_ENABLED=true to enable.");
-}
-
 // Graceful shutdown
 process.on("SIGINT", async () => {
 	console.log("\n[Server] Shutting down...");

@@ -76,8 +76,8 @@ export function loadConfig(): Config {
 		commandFilterMode = "none";
 	}
 
-	// Rate limiting config
-	const rateLimitEnabled = process.env.RATE_LIMIT_ENABLED !== "false"; // Enabled by default
+	// Rate limiting config (disabled by default - not part of Upstash API)
+	const rateLimitEnabled = process.env.RATE_LIMIT_ENABLED === "true"; // Disabled by default
 	const rateLimitMax = Number.parseInt(process.env.RATE_LIMIT_MAX ?? "100", 10);
 	const rateLimitWindowMs = Number.parseInt(process.env.RATE_LIMIT_WINDOW_MS ?? "60000", 10); // 1 minute
 

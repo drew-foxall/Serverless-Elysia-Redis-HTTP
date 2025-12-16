@@ -192,7 +192,7 @@ curl -H "Authorization: Basic ZGVmYXVsdDp5b3VyLXRva2Vu" http://localhost:8080/PI
 | `COMMAND_FILTER_MODE` | `blocklist` | `blocklist`, `allowlist`, or `none` |
 | `BLOCKED_COMMANDS` | - | Additional commands to block (comma-separated) |
 | `ALLOWED_COMMANDS` | - | Additional commands to allow (comma-separated) |
-| `RATE_LIMIT_ENABLED` | `true` | Enable rate limiting |
+| `RATE_LIMIT_ENABLED` | `false` | Enable rate limiting (not part of Upstash API) |
 | `RATE_LIMIT_MAX` | `100` | Max requests per window |
 | `RATE_LIMIT_WINDOW_MS` | `60000` | Rate limit window (1 minute) |
 
@@ -268,12 +268,14 @@ Redis URLs with passwords are automatically masked in logs to prevent credential
 
 Internal Redis errors are sanitized before being returned to clients to prevent information disclosure.
 
-### Rate Limiting
+### Rate Limiting (Optional)
 
-Rate limiting follows Upstash's patterns with standard headers:
+> **Note:** This is an additional development feature, not part of the Upstash REST API. For Upstash-compatible rate limiting, use [@upstash/ratelimit](https://github.com/upstash/ratelimit-js).
+
+Server-side rate limiting is available but **disabled by default**:
 
 ```bash
-# Enable/disable rate limiting (default: true)
+# Enable rate limiting (default: false)
 RATE_LIMIT_ENABLED=true
 
 # Maximum requests per window (default: 100)
@@ -283,18 +285,11 @@ RATE_LIMIT_MAX=100
 RATE_LIMIT_WINDOW_MS=60000
 ```
 
-**Response Headers** (Upstash-compatible):
-- `RateLimit-Limit` - Maximum requests allowed in window
-- `RateLimit-Remaining` - Remaining requests in current window  
-- `RateLimit-Reset` - Unix timestamp when limit resets
-- `Retry-After` - Seconds to wait (only on 429 responses)
+When enabled, responses include standard headers:
+- `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset`
+- `Retry-After` (on 429 responses)
 
-**Rate limit exceeded response** (HTTP 429):
-```json
-{ "error": "ERR rate limit exceeded" }
-```
-
-Rate limits are applied per-token when authentication is used, or per-IP as a fallback. Health check endpoints (`/health`) are exempt from rate limiting.
+Rate limits are applied per-token or per-IP. Health checks (`/health`) are exempt.
 
 ### Request Body Validation
 
