@@ -1,0 +1,40 @@
+{
+  "name": "serverless-elysia-redis-http",
+  "version": "1.0.0",
+  "description": "A flexible Redis-to-Upstash REST API adapter built with Elysia and Bun",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./types": "./src/types/index.ts"
+  },
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun",
+    "test": "bun test",
+    "test:integration": "REDIS_URL=redis://localhost:6379 bun test src/tests/integration.test.ts",
+    "lint": "bunx @biomejs/biome lint ./src",
+    "format": "bunx @biomejs/biome format --write ./src"
+  },
+  "dependencies": {
+    "elysia": "^1.2.0",
+    "elysia-rate-limit": "^4.4.2",
+    "ioredis": "^5.4.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0",
+    "@types/bun": "latest",
+    "@upstash/redis": "^1.35.8",
+    "typescript": "^5.0.0"
+  },
+  "keywords": [
+    "redis",
+    "upstash",
+    "elysia",
+    "bun",
+    "rest-api",
+    "serverless"
+  ],
+  "author": "",
+  "license": "MIT"
+}
