@@ -1,6 +1,6 @@
 {
   "name": "serverless-elysia-redis-http",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A flexible Redis-to-Upstash REST API adapter built with Elysia and Bun",
   "type": "module",
   "exports": {
