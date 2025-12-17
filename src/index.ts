@@ -76,8 +76,11 @@ if (config.rateLimit.enabled) {
 const server = app
 	.use(requireAuth)
 	.use(commandRoutes)
-	// Start server
-	.listen(config.port);
+	// Start server - bind to 0.0.0.0 for Docker compatibility
+	.listen({
+		port: config.port,
+		hostname: "0.0.0.0",
+	});
 
 const filterSummary = getFilterSummary();
 const rateLimitStatus = config.rateLimit.enabled
