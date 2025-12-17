@@ -1,5 +1,8 @@
 # Build stage - compile to binary
-FROM oven/bun:1 AS build
+FROM --platform=$BUILDPLATFORM oven/bun:1 AS build
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
 
 WORKDIR /app
 
@@ -13,14 +16,21 @@ COPY tsconfig.json ./
 
 ENV NODE_ENV=production
 
-# Compile to standalone binary (2-3x less memory usage)
-RUN bun build \
-	--compile \
-	--minify-whitespace \
-	--minify-syntax \
-	--target bun-linux-x64 \
-	--outfile server \
-	src/index.ts
+# Determine target architecture and compile to standalone binary
+# Bun targets: bun-linux-x64, bun-linux-arm64
+RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
+      BUN_TARGET="bun-linux-arm64"; \
+    else \
+      BUN_TARGET="bun-linux-x64"; \
+    fi && \
+    echo "Building for $TARGETPLATFORM -> $BUN_TARGET" && \
+    bun build \
+      --compile \
+      --minify-whitespace \
+      --minify-syntax \
+      --target $BUN_TARGET \
+      --outfile server \
+      src/index.ts
 
 # Production image - minimal Distroless base
 FROM gcr.io/distroless/base-debian12
