@@ -1,58 +1,30 @@
-# Build stage - compile to binary
-FROM --platform=$BUILDPLATFORM oven/bun:1 AS build
+# use the official Bun image
+# see all versions at https://hub.docker.com/r/oven/bun/tags
+FROM oven/bun:1 AS base
+WORKDIR /usr/src/app
 
-ARG TARGETPLATFORM
-ARG BUILDPLATFORM
-
-WORKDIR /app
-
-# Cache packages installation
-COPY package.json bun.lock* ./
-RUN bun install --frozen-lockfile
-
-# Copy source files
-COPY ./src ./src
-COPY tsconfig.json ./
-
-ENV NODE_ENV=production
-
-# Determine target architecture and compile to standalone binary
-# Bun targets: bun-linux-x64, bun-linux-arm64
-RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
-      BUN_TARGET="bun-linux-arm64"; \
-    else \
-      BUN_TARGET="bun-linux-x64"; \
-    fi && \
-    echo "Building for $TARGETPLATFORM -> $BUN_TARGET" && \
-    bun build \
-      --compile \
-      --minify-whitespace \
-      --minify-syntax \
-      --target $BUN_TARGET \
-      --outfile server \
-      src/index.ts
-
-# Production image - minimal Distroless base
-FROM gcr.io/distroless/base-debian12
-
-# OCI labels for Docker Hub
+# OCI labels
 LABEL org.opencontainers.image.title="Serverless Elysia Redis HTTP"
 LABEL org.opencontainers.image.description="Upstash-compatible REST API adapter for Redis"
 LABEL org.opencontainers.image.source="https://github.com/drew-foxall/Serverless-Elysia-Redis-HTTP"
 LABEL org.opencontainers.image.licenses="MIT"
-LABEL org.opencontainers.image.vendor="drewgarratt382"
 
-WORKDIR /app
+# install dependencies into temp directory
+# this will cache them and speed up future builds
+FROM base AS install
+RUN mkdir -p /temp/prod
+COPY package.json bun.lock /temp/prod/
+RUN cd /temp/prod && bun install --frozen-lockfile --production
 
-# Copy compiled binary from build stage
-COPY --from=build /app/server server
+# copy production dependencies and source code into final image
+FROM base AS release
+COPY --from=install /temp/prod/node_modules node_modules
+COPY ./src ./src
+COPY tsconfig.json package.json ./
 
+# run the app
+USER bun
 ENV NODE_ENV=production
 ENV PORT=8080
-
-# Run as non-root (distroless default)
-USER nonroot
-
-EXPOSE 8080
-
-CMD ["./server"]
+EXPOSE 8080/tcp
+ENTRYPOINT ["bun", "run", "src/index.ts"]

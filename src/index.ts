@@ -73,14 +73,16 @@ if (config.rateLimit.enabled) {
 }
 
 // Apply authentication and command routes
-const server = app
-	.use(requireAuth)
-	.use(commandRoutes)
-	// Start server - bind to 0.0.0.0 for Docker compatibility
-	.listen({
-		port: config.port,
-		hostname: "0.0.0.0",
-	});
+const elysiaApp = app.use(requireAuth).use(commandRoutes);
+
+// Use Bun.serve directly instead of Elysia's .listen()
+// Workaround for Docker port detection bug (elysia#80, bun#5315)
+// https://github.com/elysiajs/elysia/issues/80
+const server = Bun.serve({
+	port: config.port,
+	hostname: "0.0.0.0",
+	fetch: elysiaApp.fetch,
+});
 
 const filterSummary = getFilterSummary();
 const rateLimitStatus = config.rateLimit.enabled
@@ -135,4 +137,5 @@ process.on("SIGTERM", async () => {
 });
 
 export type App = typeof server;
-export default server;
+// Note: Don't use `export default` - Bun auto-serves default exports
+// which causes "port in use" errors in Docker (elysia#80, bun#5315)
